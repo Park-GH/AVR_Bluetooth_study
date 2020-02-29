@@ -3,29 +3,27 @@ Bluetooth_test.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000000e0  00000000  00000000  00000054  2**1
+  0 .text         000000fa  00000000  00000000  00000054  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .stab         000006cc  00000000  00000000  00000134  2**2
+  1 .stab         000006cc  00000000  00000000  00000150  2**2
                   CONTENTS, READONLY, DEBUGGING
-  2 .stabstr      00000085  00000000  00000000  00000800  2**0
+  2 .stabstr      00000085  00000000  00000000  0000081c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  3 .debug_aranges 00000020  00000000  00000000  00000885  2**0
+  3 .debug_aranges 00000020  00000000  00000000  000008a1  2**0
                   CONTENTS, READONLY, DEBUGGING
-  4 .debug_pubnames 0000001b  00000000  00000000  000008a5  2**0
+  4 .debug_pubnames 00000033  00000000  00000000  000008c1  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_info   00000165  00000000  00000000  000008c0  2**0
+  5 .debug_info   000001a9  00000000  00000000  000008f4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_abbrev 00000104  00000000  00000000  00000a25  2**0
+  6 .debug_abbrev 00000141  00000000  00000000  00000a9d  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_line   0000019a  00000000  00000000  00000b29  2**0
+  7 .debug_line   000001da  00000000  00000000  00000bde  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_frame  00000020  00000000  00000000  00000cc4  2**2
+  8 .debug_frame  00000040  00000000  00000000  00000db8  2**2
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_str    00000104  00000000  00000000  00000ce4  2**0
+  9 .debug_str    00000112  00000000  00000000  00000df8  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_loc    00000034  00000000  00000000  00000de8  2**0
-                  CONTENTS, READONLY, DEBUGGING
- 11 .debug_pubtypes 00000038  00000000  00000000  00000e1c  2**0
+ 10 .debug_pubtypes 00000038  00000000  00000000  00000f0a  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -74,86 +72,93 @@ Disassembly of section .text:
   92:	d0 e1       	ldi	r29, 0x10	; 16
   94:	de bf       	out	0x3e, r29	; 62
   96:	cd bf       	out	0x3d, r28	; 61
-  98:	0e 94 52 00 	call	0xa4	; 0xa4 <main>
-  9c:	0c 94 6e 00 	jmp	0xdc	; 0xdc <_exit>
+  98:	0e 94 61 00 	call	0xc2	; 0xc2 <main>
+  9c:	0c 94 7b 00 	jmp	0xf6	; 0xf6 <_exit>
 
 000000a0 <__bad_interrupt>:
   a0:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
 
-000000a4 <main>:
-
-
-
-int main(void)
-
+000000a4 <rx_char>:
+#include <avr/io.h>
+#include <util/delay.h>
+ 
+char rx_char(void)
 {
-  a4:	0f 93       	push	r16
-  a6:	1f 93       	push	r17
+    while(!(UCSR1A & 0x80));
+  a4:	80 91 9b 00 	lds	r24, 0x009B
+  a8:	87 ff       	sbrs	r24, 7
+  aa:	fc cf       	rjmp	.-8      	; 0xa4 <rx_char>
+    return UDR1;
+  ac:	80 91 9c 00 	lds	r24, 0x009C
+}
+  b0:	08 95       	ret
 
-	unsigned int	counter=0;
-
-	DDRA	= 0xFF;
-  a8:	8f ef       	ldi	r24, 0xFF	; 255
-  aa:	8a bb       	out	0x1a, r24	; 26
-
-	PORTA	= 0x00;
-  ac:	1b ba       	out	0x1b, r1	; 27
-
-int main(void)
-
+000000b2 <tx_char>:
+ 
+void tx_char(uint8_t bData)
 {
+    while((UCSR1A&0x20) == 0)
+  b2:	02 c0       	rjmp	.+4      	; 0xb8 <tx_char+0x6>
+    UDR1 = bData;    
+  b4:	80 93 9c 00 	sts	0x009C, r24
+    return UDR1;
+}
+ 
+void tx_char(uint8_t bData)
+{
+    while((UCSR1A&0x20) == 0)
+  b8:	90 91 9b 00 	lds	r25, 0x009B
+  bc:	95 ff       	sbrs	r25, 5
+  be:	fa cf       	rjmp	.-12     	; 0xb4 <tx_char+0x2>
+    UDR1 = bData;    
+}
+  c0:	08 95       	ret
 
-	unsigned int	counter=0;
-  ae:	80 e0       	ldi	r24, 0x00	; 0
-  b0:	90 e0       	ldi	r25, 0x00	; 0
-
-	{
-
-		if(counter++%2==0)
-
-			PORTA=0x01;
-  b2:	41 e0       	ldi	r20, 0x01	; 1
-
-	while(1)
-
-	{
-
-		if(counter++%2==0)
-  b4:	9c 01       	movw	r18, r24
-  b6:	21 70       	andi	r18, 0x01	; 1
-  b8:	30 70       	andi	r19, 0x00	; 0
-  ba:	01 96       	adiw	r24, 0x01	; 1
-  bc:	21 15       	cp	r18, r1
-  be:	31 05       	cpc	r19, r1
-  c0:	11 f4       	brne	.+4      	; 0xc6 <main+0x22>
-
-			PORTA=0x01;
-  c2:	4b bb       	out	0x1b, r20	; 27
-  c4:	01 c0       	rjmp	.+2      	; 0xc8 <main+0x24>
-
-		else
-
-			PORTA=0x00;
-  c6:	1b ba       	out	0x1b, r1	; 27
+000000c2 <main>:
+ 
+ int main(void)
+ {
+    uint8_t bData = 'A';
+    
+    UCSR1A=0x00; //flag 레지스터를 사용하지 않음
+  c2:	10 92 9b 00 	sts	0x009B, r1
+    UCSR1B=0x18; //수신 enable, 송신 enable, 전송비트 8bit
+  c6:	88 e1       	ldi	r24, 0x18	; 24
+  c8:	80 93 9a 00 	sts	0x009A, r24
+    UCSR1C=0x06; //비동기식 통신
+  cc:	86 e0       	ldi	r24, 0x06	; 6
+  ce:	80 93 9d 00 	sts	0x009D, r24
+    UBRR1H=0;
+  d2:	10 92 98 00 	sts	0x0098, r1
+    UBRR1L=103; //9600bps
+  d6:	87 e6       	ldi	r24, 0x67	; 103
+  d8:	80 93 99 00 	sts	0x0099, r24
+     
+    /* Replace with your application code */
+    while (1)
+    {
+        tx_char(bData);
+  dc:	81 e4       	ldi	r24, 0x41	; 65
+  de:	0e 94 59 00 	call	0xb2	; 0xb2 <tx_char>
 	#else
 		//round up by default
 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
 	#endif
 
 	__builtin_avr_delay_cycles(__ticks_dc);
-  c8:	0f ef       	ldi	r16, 0xFF	; 255
-  ca:	13 ec       	ldi	r17, 0xC3	; 195
-  cc:	29 e0       	ldi	r18, 0x09	; 9
-  ce:	01 50       	subi	r16, 0x01	; 1
-  d0:	10 40       	sbci	r17, 0x00	; 0
-  d2:	20 40       	sbci	r18, 0x00	; 0
-  d4:	e1 f7       	brne	.-8      	; 0xce <main+0x2a>
-  d6:	00 c0       	rjmp	.+0      	; 0xd8 <main+0x34>
-  d8:	00 00       	nop
-  da:	ec cf       	rjmp	.-40     	; 0xb4 <main+0x10>
+  e2:	8f ef       	ldi	r24, 0xFF	; 255
+  e4:	97 ea       	ldi	r25, 0xA7	; 167
+  e6:	a1 e6       	ldi	r26, 0x61	; 97
+  e8:	81 50       	subi	r24, 0x01	; 1
+  ea:	90 40       	sbci	r25, 0x00	; 0
+  ec:	a0 40       	sbci	r26, 0x00	; 0
+  ee:	e1 f7       	brne	.-8      	; 0xe8 <main+0x26>
+  f0:	00 c0       	rjmp	.+0      	; 0xf2 <main+0x30>
+  f2:	00 00       	nop
+  f4:	f3 cf       	rjmp	.-26     	; 0xdc <main+0x1a>
 
-000000dc <_exit>:
-  dc:	f8 94       	cli
+000000f6 <_exit>:
+  f6:	f8 94       	cli
 
-000000de <__stop_program>:
-  de:	ff cf       	rjmp	.-2      	; 0xde <__stop_program>
+000000f8 <__stop_program>:
+  f8:	ff cf       	rjmp	.-2      	; 0xf8 <__stop_program>
